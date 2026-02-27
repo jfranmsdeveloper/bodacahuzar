@@ -4,7 +4,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
 
 interface Guest {
   name: string;
@@ -28,50 +27,38 @@ export function RSVPForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-1553dea5/rsvp`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+    const messageText = `¡Hola! Soy ${formData.name}.
+${formData.attendance === 'yes' ? `Confirmo mi asistencia a la boda para ${formData.numberOfGuests} persona(s).` : `Lamentablemente no podré asistir a la boda.`}
+${formData.email ? `\nEmail: ${formData.email}` : ''}
+${formData.phone ? `Teléfono: ${formData.phone}` : ''}
+${formData.message ? `\n\nMensaje: ${formData.message}` : ''}`;
 
-      const data = await response.json();
+    // Usar el número +34 (España) o ajustar el prefijo si es para otro país.
+    // Número asignado: 600 78 88 99
+    const whatsappUrl = `https://wa.me/34600788899?text=${encodeURIComponent(messageText)}`;
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al enviar la confirmación');
-      }
+    window.open(whatsappUrl, '_blank');
 
-      setSubmitted(true);
-      
-      // Resetear después de 5 segundos
-      setTimeout(() => {
-        setSubmitted(false);
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          attendance: 'yes',
-          numberOfGuests: 1,
-          message: '',
-        });
-      }, 5000);
-    } catch (err) {
-      console.error('Error submitting RSVP:', err);
-      setError(err instanceof Error ? err.message : 'Error al enviar la confirmación');
-    } finally {
-      setLoading(false);
-    }
+    setSubmitted(true);
+    setLoading(false);
+
+    // Resetear después de 5 segundos
+    setTimeout(() => {
+      setSubmitted(false);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        attendance: 'yes',
+        numberOfGuests: 1,
+        message: '',
+      });
+    }, 5000);
   };
 
   return (
